@@ -1,0 +1,20 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# React
+node_modules/
+dist/
+build/
+
+# Others
+.vscode/
+.DS_Store
+*.log
