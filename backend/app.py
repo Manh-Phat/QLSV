@@ -1658,53 +1658,72 @@ def create_app():
     # 15. XOA SINH VIEN
     # ==============================================
 
+    
     @app.delete("/api/students/<int:student_id>")
     @permission_required("STUDENT_DELETE")
     def student_delete(student_id):
-
-        student = db.session.get(
-            Student,
-            student_id,
-        )
-
-        if student is None:
-            return api_error(
-                "Không tìm thấy sinh viên.",
-                404,
-            )
-
-        name = student.full_name
+        """Không xóa hồ sơ đang có tài khoản ADMIN."""
 
         try:
-            # Xoa tai khoan lien ket truoc.
-            accounts = Account.query.filter_by(
-                student_id=student_id
+            student = db.session.scalar(
+                db.select(Student)
+                .where(Student.id == student_id)
+                .with_for_update()
+            )
+
+            if student is None:
+                return api_error(
+                    "Không tìm thấy sinh viên.",
+                    404
+                )
+
+            accounts = db.session.scalars(
+                db.select(Account)
+                .where(Account.student_id == student_id)
+                .with_for_update()
             ).all()
 
+            # Chặn xóa nếu tài khoản liên kết là ADMIN.
+            if any(
+                account.role == "ADMIN"
+                for account in accounts
+            ):
+                db.session.rollback()
+
+                return api_error(
+                    "Không thể xóa hồ sơ đang liên kết "
+                    "với tài khoản ADMIN. Hãy thu hồi "
+                    "quyền ADMIN trước khi xóa.",
+                    409
+                )
+
+            name = student.full_name
+
+            # Chỉ xóa tài khoản STUDENT liên kết.
             for account in accounts:
                 db.session.delete(account)
 
             db.session.delete(student)
-
             db.session.commit()
 
             return jsonify({
                 "ok": True,
                 "message": (
-                    f"Đã xóa {name} và tài khoản liên kết."
-                ),
+                    f"Đã xóa {name} và "
+                    "tài khoản STUDENT liên kết."
+                )
             })
 
         except Exception:
             db.session.rollback()
-
             app.logger.exception(
                 "Failed to delete student"
             )
 
             return api_error(
-                "Không thể xóa sinh viên.",
-                500,
+                "Không thể xóa sinh viên "
+                "do lỗi máy chủ.",
+                500
             )
 
     # ==============================================

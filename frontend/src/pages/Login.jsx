@@ -62,10 +62,8 @@ export default function Login({ onLogin }) {
         </form>
 
         <div className="demo-credentials">
-          <strong>Tài khoản kiểm thử</strong>
-          <code>admin / Admin@123</code>
-          <code>sv001 / Student@123</code>
-          <code>sv002 / Student@123</code>
+          <strong>Nếu quên mật khẩu, vui lòng liên hệ
+            ADMIN để được hỗ trợ.</strong>
         </div>
       </div>
     </div>
